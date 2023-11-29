@@ -69,7 +69,7 @@ namespace Utilities
             // gather the files in the assembly. all files in the ProductImport folder will be processed
             //var files = Assembly.GetExecutingAssembly().GetManifestResourceNames().ToList();
 
-            var files = Directory.GetFiles("C:\\Repositories\\Bokus\\ProductFiles").ToList();
+            var files = Directory.GetFiles("C:\\Repositories\\Utilities\\ProductFiles").ToList();
 
             //begin parsing the file and calling the API
             var products = new ProductImportPipeline(_ocIntegrationClient, _settings);
