@@ -29,8 +29,8 @@ namespace Utilities
         public string binding { get; internal set; }
         public string language { get; internal set; }
 
-        //public ExpandoObject facets { get; set; }
-        //public List<Category> categories { get; set; }
+        public ExpandoObject facets { get; set; } = null;
+        public List<Category> categories { get; set; } = null;
         public BokusXp()
         {
             //facets = new ExpandoObject();
