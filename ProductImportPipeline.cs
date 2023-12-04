@@ -1,16 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OrderCloud.SDK;
 using Utilities.Helpers;
 
@@ -20,6 +13,8 @@ namespace Utilities
     {
         private readonly IOrderCloudClient _oc;
         private readonly AppSettings _settings;
+        private const int TEST_BATCH = 10000;
+        private const int SKIP_COUNT = 100000;
 
         public ProductImportPipeline(IOrderCloudClient oc, AppSettings settings)
         {
@@ -76,8 +71,14 @@ namespace Utilities
 
             foreach (var file in files)
             {
-                Console.WriteLine($"Staring file {file.ToString()}");
-                var products = ProductMapping(file, tracker);
+                Console.WriteLine($"Staring file {file}");
+                //var products = ProductMapping(file, tracker);
+                var products = ProductIDs(file);
+                using (var stream = File.CreateText("C:\\Repositories\\Utilities\\Log\\ids.txt"))
+                    foreach(var s in products)
+                    {
+                        stream.WriteLine(s);
+                    }
 
                 tracker.ItemsDiscovered(products.Count);
 
@@ -95,8 +96,12 @@ namespace Utilities
                 await Throttler.RunAsync(products, 20, 1000, async p =>
                 {
                     //await Methods.PutProducts(oc, p, _settings.CatalogID, tracker);
-                    
-                    await Methods.PatchProducts(oc, p, _settings.CatalogID, tracker);
+                    //await Methods.PatchProducts(oc, p, _settings.CatalogID, tracker);
+                    await Methods.PutPriceSchedules(oc, p, tracker);
+                });
+                await Throttler.RunAsync(products, 20, 1000, async p =>
+                {
+                    await Methods.PatchProducts(oc, p, tracker);
                 });
                 Console.WriteLine("Complete");
             }
@@ -138,6 +143,14 @@ namespace Utilities
             //    XpPath = f.ID
             //}).ToList();
             //return unique;
+        }
+
+        private List<string> ProductIDs(string file)
+        {
+            return new HashSet<string>(File.ReadLines(file))
+                .Skip(SKIP_COUNT)
+                .Take(TEST_BATCH)
+                .ToList();
         }
 
         private HashSet<Product<BokusXp>> ProductMapping(string file, Tracker tracker)

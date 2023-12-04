@@ -31,6 +31,9 @@ namespace Utilities
 
         public ExpandoObject facets { get; set; } = null;
         public List<Category> categories { get; set; } = null;
+        public bool uniquePrice { get; set; }
+
+
         public BokusXp()
         {
             //facets = new ExpandoObject();

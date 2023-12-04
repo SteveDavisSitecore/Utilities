@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using OrderCloud.SDK;
+using Polly.Registry;
 using Utilities.Helpers;
 
 namespace Utilities
@@ -168,6 +169,57 @@ namespace Utilities
                 //        ProductID = product.ID
                 //    });
                 //}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task PutPriceSchedules(IOrderCloudClient oc, string p, Tracker tracker)
+        {
+            try
+            {
+                await oc.PriceSchedules.SaveAsync(p, new PriceSchedule()
+                {
+                    ID = p,
+                    Name = $"{p} default price",
+                    MinQuantity = 1,
+                    MaxQuantity = 100,
+                    PriceBreaks = new[]
+                    {
+                        new PriceBreak
+                        {
+                            Price = new Random().Next(10, 100),
+                            Quantity = 1
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task PatchProducts(IOrderCloudClient oc, string p, Tracker tracker)
+        {
+            try
+            {
+                await oc.Products.PatchAsync(p, new PartialProduct() { 
+                    DefaultPriceScheduleID = p, 
+                    xp = new { uniquePrice = true }
+                });
             }
             catch (Exception ex)
             {
