@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using OrderCloud.SDK;
-using Polly.Registry;
 using Utilities.Helpers;
 
 namespace Utilities
@@ -181,21 +179,21 @@ namespace Utilities
             }
         }
 
-        internal static async Task PutPriceSchedules(IOrderCloudClient oc, string p, Tracker tracker)
+        internal static async Task PutPriceSchedules(IOrderCloudClient oc, KeyValuePair<string, decimal> p, Tracker tracker)
         {
             try
             {
-                await oc.PriceSchedules.SaveAsync(p, new PriceSchedule()
+                await oc.PriceSchedules.SaveAsync(p.Key, new PriceSchedule()
                 {
-                    ID = p,
-                    Name = $"{p} default price",
+                    ID = p.Key,
+                    Name = $"{p.Key} default price",
                     MinQuantity = 1,
                     MaxQuantity = 100,
                     PriceBreaks = new[]
                     {
                         new PriceBreak
                         {
-                            Price = new Random().Next(10, 100),
+                            Price = p.Value,
                             Quantity = 1
                         }
                     }
@@ -212,13 +210,13 @@ namespace Utilities
             }
         }
 
-        internal static async Task PatchProducts(IOrderCloudClient oc, string p, Tracker tracker)
+        internal static async Task PatchProducts(IOrderCloudClient oc, KeyValuePair<string, decimal> p, Tracker tracker)
         {
             try
             {
-                await oc.Products.PatchAsync(p, new PartialProduct() { 
-                    DefaultPriceScheduleID = p, 
-                    xp = new { uniquePrice = true }
+                await oc.Products.PatchAsync(p.Key, new PartialProduct() { 
+                    DefaultPriceScheduleID = p.Key, 
+                    xp = new { uniquePrice = true, sortPrice = p.Value }
                 });
             }
             catch (Exception ex)

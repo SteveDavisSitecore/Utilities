@@ -13,8 +13,8 @@ namespace Utilities
     {
         private readonly IOrderCloudClient _oc;
         private readonly AppSettings _settings;
-        private const int TEST_BATCH = 10000;
-        private const int SKIP_COUNT = 100000;
+        private const int TEST_BATCH = 100;
+        private const int SKIP_COUNT = 1000000;
 
         public ProductImportPipeline(IOrderCloudClient oc, AppSettings settings)
         {
@@ -73,7 +73,12 @@ namespace Utilities
             {
                 Console.WriteLine($"Staring file {file}");
                 //var products = ProductMapping(file, tracker);
-                var products = ProductIDs(file);
+                var ids = ProductIDs(file);
+                var products = new Dictionary<string, decimal>();
+                foreach(var p in ids)
+                {
+                    products.Add(p, new Random().Next(10, 100));   
+                }
                 using (var stream = File.CreateText("C:\\Repositories\\Utilities\\Log\\ids.txt"))
                     foreach(var s in products)
                     {
