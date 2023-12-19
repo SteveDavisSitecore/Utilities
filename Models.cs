@@ -121,4 +121,11 @@ namespace Utilities
         public string name { get; set; }
     }
 
+    public class PSPXp
+    {
+        public string Color { get; set; }
+        public string Size { get; set; }
+        public string Brand { get; set; }
+    }
+
 }

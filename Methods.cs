@@ -104,6 +104,7 @@ namespace Utilities
                 }
             });
         }
+
         internal static async Task PutPriceSchedule(IOrderCloudClient oc)
         {
             await oc.PriceSchedules.SaveAsync("DefaultPrice", new PriceSchedule()
@@ -111,15 +112,31 @@ namespace Utilities
                 ID = "DefaultPrice",
                 Name = "Default Price",
                 PriceBreaks = new List<PriceBreak>()
-            {
-                new PriceBreak()
                 {
-                    Price = 15,
-                    Quantity = 1
+                    new PriceBreak()
+                    {
+                        Price = 15,
+                        Quantity = 1
+                    }
                 }
-            }
             });
         }
+        //internal static async Task PutPriceSchedule(IOrderCloudClient oc)
+        //{
+        //    await oc.PriceSchedules.SaveAsync("DefaultPrice", new PriceSchedule()
+        //    {
+        //        ID = "DefaultPrice",
+        //        Name = "Default Price",
+        //        PriceBreaks = new List<PriceBreak>()
+        //    {
+        //        new PriceBreak()
+        //        {
+        //            Price = 15,
+        //            Quantity = 1
+        //        }
+        //    }
+        //    });
+        //}
 
         internal static void WriteProducts(HashSet<Product<BokusXp>> products, string fileName)
         {
@@ -179,25 +196,11 @@ namespace Utilities
             }
         }
 
-        internal static async Task PutPriceSchedules(IOrderCloudClient oc, KeyValuePair<string, decimal> p, Tracker tracker)
+        internal static async Task PutProducts(IOrderCloudClient oc, Product<PSPXp> product, Tracker tracker)
         {
             try
             {
-                await oc.PriceSchedules.SaveAsync(p.Key, new PriceSchedule()
-                {
-                    ID = p.Key,
-                    Name = $"{p.Key} default price",
-                    MinQuantity = 1,
-                    MaxQuantity = 100,
-                    PriceBreaks = new[]
-                    {
-                        new PriceBreak
-                        {
-                            Price = p.Value,
-                            Quantity = 1
-                        }
-                    }
-                });
+                await oc.Products.SaveAsync(product.ID, product);
             }
             catch (Exception ex)
             {
@@ -209,6 +212,105 @@ namespace Utilities
                 tracker.ItemSucceeded();
             }
         }
+
+        internal static async Task PutInventoryRecords(IOrderCloudClient oc, InventoryRecord inventoryRecord, string productID, Tracker tracker)
+        {
+            try
+            {
+                await oc.InventoryRecords.SaveAsync(productID, inventoryRecord.ID, inventoryRecord);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task PutPriceSchedules(IOrderCloudClient oc, PriceSchedule ps, string productID, Tracker tracker)
+        {
+            try
+            {
+                await oc.PriceSchedules.SaveAsync(productID, ps);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task AssignProductsAsync(IOrderCloudClient oc, ProductAssignment assignment, Tracker tracker)
+        {
+            try
+            {
+                await oc.Products.SaveAssignmentAsync(assignment);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task AssignDefaultPricingAsync(IOrderCloudClient oc, string productID, string supplierID, string profiledPsID, Tracker tracker)
+        {
+            try
+            {
+                await oc.Products.SaveSupplierAsync(productID, supplierID, profiledPsID);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        //internal static async Task PutPriceSchedules(IOrderCloudClient oc, KeyValuePair<string, decimal> p, Tracker tracker)
+        //{
+        //    try
+        //    {
+        //        await oc.PriceSchedules.SaveAsync(p.Key, new PriceSchedule()
+        //        {
+        //            ID = p.Key,
+        //            Name = $"{p.Key} default price",
+        //            MinQuantity = 1,
+        //            MaxQuantity = 100,
+        //            PriceBreaks = new[]
+        //            {
+        //                new PriceBreak
+        //                {
+        //                    Price = p.Value,
+        //                    Quantity = 1
+        //                }
+        //            }
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //        tracker.ItemFailed();
+        //    }
+        //    finally
+        //    {
+        //        tracker.ItemSucceeded();
+        //    }
+        //}
 
         internal static async Task PatchProducts(IOrderCloudClient oc, KeyValuePair<string, decimal> p, Tracker tracker)
         {
