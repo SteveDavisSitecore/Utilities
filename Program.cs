@@ -66,19 +66,9 @@ namespace Utilities
             tracker.OnComplete(Methods.LogProgress);
             tracker.Start();
 
-            // gather the files in the assembly. all files in the ProductImport folder will be processed
-            //var files = Assembly.GetExecutingAssembly().GetManifestResourceNames().ToList();
-
-            var files = Directory.GetFiles("C:\\Repositories\\Utilities\\ProductFiles").ToList();
-
             //begin parsing the file and calling the API
             var products = new ProductImportPipeline(_ocIntegrationClient, _settings);
-            var lastID = "";
-            if (_settings.Live)
-            {
-                lastID = await products.RunAsync(_ocIntegrationClient, files, tracker);
-            } 
-            else products.Run(files, tracker);
+            var lastID = await products.RunAsync(_ocIntegrationClient, tracker);
 
             tracker.Stop();
             tracker.Now(Methods.LogProgress);

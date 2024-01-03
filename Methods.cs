@@ -155,7 +155,7 @@ namespace Utilities
             }
         }
 
-        internal static async Task<string> PutProducts(IOrderCloudClient oc, Product<BokusXp> product, string catalogId, Tracker tracker)
+        internal static async Task<string> PutProducts(IOrderCloudClient oc, Product product, Tracker tracker)
         {
             try
             {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -20,7 +20,7 @@ namespace Utilities
     {
         private readonly IOrderCloudClient _oc;
         private readonly AppSettings _settings;
-        private const int PRODUCT_COUNT = 10000;
+        private const int PRODUCT_COUNT = 10;
 
         public ProductImportPipeline(IOrderCloudClient oc, AppSettings settings)
         {
@@ -70,29 +70,27 @@ namespace Utilities
             }
         }
 
-        public async Task<string> RunAsync(IOrderCloudClient oc, List<string> files, Tracker tracker)
+        public async Task<string> RunAsync(IOrderCloudClient oc, Tracker tracker)
         {
-            Console.WriteLine("starting");
-            //await Methods.PutPriceSchedule(oc);
-            var lastID = "";
+            Console.WriteLine("Mapping Products");
 
-            foreach (var file in files)
+            var products = new Dictionary<decimal, Product>();
+
+            for (var i = 0; i < PRODUCT_COUNT; i++)
             {
-                var products = ProductMapping(file, tracker).Take(PRODUCT_COUNT).ToList();
-
-                tracker.ItemsDiscovered(products.Count);
-
-                Console.WriteLine($"Starting PUT products: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
-                await Throttler.RunAsync(products, 20, 1000, async p =>
-                {
-                   var productID = await Methods.PutProducts(oc, p, _settings.CatalogID, tracker);
-                   if (productID != null) lastID = productID;
-
-                   //await Methods.PatchProducts(oc, p, _settings.CatalogID, tracker);
-                });
-                Console.WriteLine("Complete");
+                products.Add(i, MapMockProductData());
             }
-            Console.WriteLine($"Last ID: {lastID}");
+
+            tracker.ItemsDiscovered(products.Count());
+            var lastID = "";
+            Console.WriteLine($"Starting PUT products: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
+            await Throttler.RunAsync(products, 20, 1000, async p =>
+            {
+                var productID = await Methods.PutProducts(oc, p.Value, tracker);
+                if (productID != null) lastID = productID;
+            });
+            Console.WriteLine($"Last Product ID: {lastID}");
+
             return lastID;
         }
 
@@ -132,6 +130,20 @@ namespace Utilities
             //    XpPath = f.ID
             //}).ToList();
             //return unique;
+        }
+
+        public static Product MapMockProductData()
+        {
+            var productID = Guid.NewGuid().ToString();
+
+            Product product = new Product();
+
+            product.ID = (string)productID;
+            product.Active = true;
+            product.Description = (string)string.Concat("Description_", productID);
+            product.Name = (string)string.Concat("Name_", productID);
+
+            return product;
         }
 
         private HashSet<Product<BokusXp>> ProductMapping(string file, Tracker tracker)
