@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -155,29 +155,29 @@ namespace Utilities
             }
         }
 
-        internal static async Task PutProducts(IOrderCloudClient oc, Product<BokusXp> product, string catalogId, Tracker tracker)
+        internal static async Task<string> PutProducts(IOrderCloudClient oc, Product<BokusXp> product, string catalogId, Tracker tracker)
         {
             try
             {
                 await oc.Products.SaveAsync(product.ID, product);
-                //foreach (var c in product.xp.categories)
-                //{
-                //    await oc.Categories.SaveProductAssignmentAsync(catalogId, new CategoryProductAssignment()
-                //    {
-                //        CategoryID = c.code,
-                //        ProductID = product.ID
-                //    });
-                //}
+                return product.ID;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 tracker.ItemFailed();
+                return null;
             }
             finally
             {
                 tracker.ItemSucceeded();
             }
+        }
+
+
+        internal static async Task<ListPageWithFacets<Product>> ListProductsWithLastIDFilter(IOrderCloudClient oc, string productID)
+        {
+            return await oc.Products.ListAsync(filters: new { ID = productID });
         }
     }
 

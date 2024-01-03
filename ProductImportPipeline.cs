@@ -20,6 +20,7 @@ namespace Utilities
     {
         private readonly IOrderCloudClient _oc;
         private readonly AppSettings _settings;
+        private const int PRODUCT_COUNT = 100000;
 
         public ProductImportPipeline(IOrderCloudClient oc, AppSettings settings)
         {
@@ -69,37 +70,31 @@ namespace Utilities
             }
         }
 
-        public async Task RunAsync(IOrderCloudClient oc, List<string> files, Tracker tracker)
+        public async Task<string> RunAsync(IOrderCloudClient oc, List<string> files, Tracker tracker)
         {
             Console.WriteLine("starting");
             //await Methods.PutPriceSchedule(oc);
+            var lastID = "";
 
             foreach (var file in files)
             {
                 Console.WriteLine($"Staring file {file.ToString()}");
-                var products = ProductMapping(file, tracker);
+                var products = ProductMapping(file, tracker).Take(PRODUCT_COUNT).ToList();
 
                 tracker.ItemsDiscovered(products.Count);
 
-                //Console.WriteLine($"PUT categories");
-                //await Throttler.RunAsync(Categories(products), 10, 1000, async f =>
-                //{
-                //    await Methods.PutCategory(oc, f, _settings.CatalogID);
-                //});
-                //Console.WriteLine($"PUT facets");
-                //await Throttler.RunAsync(Facets(products), 10, 1000, async f =>
-                //{
-                //    await Methods.PutFacet(oc, f);
-                //});
                 Console.WriteLine("PUT products");
                 await Throttler.RunAsync(products, 20, 1000, async p =>
                 {
-                    //await Methods.PutProducts(oc, p, _settings.CatalogID, tracker);
-                    
-                    await Methods.PatchProducts(oc, p, _settings.CatalogID, tracker);
+                   var productID = await Methods.PutProducts(oc, p, _settings.CatalogID, tracker);
+                   if (productID != null) lastID = productID;
+
+                   //await Methods.PatchProducts(oc, p, _settings.CatalogID, tracker);
                 });
                 Console.WriteLine("Complete");
             }
+            Console.WriteLine($"Last ID: {lastID}");
+            return lastID;
         }
 
         private List<OrderCloud.SDK.Category> Categories(HashSet<Product<BokusXp>> hash)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -36,12 +36,12 @@ namespace Utilities
                 }
             });
 
-            Console.WriteLine("First step is to configure the buyer environment. Type Y to continue, N to skip");
-            var setup_buyer = Console.ReadLine();
-            if (setup_buyer.ToLower() == "y")
-            {
-                await SetupBuyer();
-            }
+            //Console.WriteLine("First step is to configure the buyer environment. Type Y to continue, N to skip");
+            //var setup_buyer = Console.ReadLine();
+            //if (setup_buyer.ToLower() == "y")
+            //{
+            //    await SetupBuyer();
+            //}
 
             Console.WriteLine("Next step is to import products embedded in assembly. Type Y to continue, N to skip");
             var import_products = Console.ReadLine();
@@ -73,12 +73,33 @@ namespace Utilities
 
             //begin parsing the file and calling the API
             var products = new ProductImportPipeline(_ocIntegrationClient, _settings);
-            if (_settings.Live) await products.RunAsync(_ocIntegrationClient, files, tracker); else products.Run(files, tracker);
+            var lastID = "";
+            if (_settings.Live)
+            {
+                lastID = await products.RunAsync(_ocIntegrationClient, files, tracker);
+            } 
+            else products.Run(files, tracker);
 
             tracker.Stop();
             tracker.Now(Methods.LogProgress);
             await tracker.CompleteAsync();
-            Console.WriteLine($"Import complete: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            Console.WriteLine($"API Import complete: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
+
+            await PollForLastProduct(lastID);
+        }
+
+        private static async Task PollForLastProduct(string productID)
+        {
+            var results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
+
+            // poll every 1 second until last product ID shows up in product list (indexed in Elasticsearch)
+            while (!results.Items.Any())
+            {
+                results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
+
+                await Task.Delay(1000);
+            }
+            Console.WriteLine($"Last Product ID indexed in Elasticsearch: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
         }
     }
 }

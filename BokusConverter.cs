@@ -25,7 +25,8 @@ namespace Utilities
             };
             JObject obj = JObject.Load(reader);
 
-            product.ID = ((string)obj["sku"]).ToSafeID();
+            //product.ID = ((string)obj["sku"]).ToSafeID();
+            product.ID = Guid.NewGuid().ToString();
             product.DefaultPriceScheduleID = "DefaultPrice";
             product.Returnable = true;
             product.AllSuppliersCanSell = false;
