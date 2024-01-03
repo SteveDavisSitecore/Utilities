@@ -20,7 +20,7 @@ namespace Utilities
     {
         private readonly IOrderCloudClient _oc;
         private readonly AppSettings _settings;
-        private const int PRODUCT_COUNT = 100000;
+        private const int PRODUCT_COUNT = 10000;
 
         public ProductImportPipeline(IOrderCloudClient oc, AppSettings settings)
         {
@@ -78,12 +78,11 @@ namespace Utilities
 
             foreach (var file in files)
             {
-                Console.WriteLine($"Staring file {file.ToString()}");
                 var products = ProductMapping(file, tracker).Take(PRODUCT_COUNT).ToList();
 
                 tracker.ItemsDiscovered(products.Count);
 
-                Console.WriteLine("PUT products");
+                Console.WriteLine($"Starting PUT products: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
                 await Throttler.RunAsync(products, 20, 1000, async p =>
                 {
                    var productID = await Methods.PutProducts(oc, p, _settings.CatalogID, tracker);

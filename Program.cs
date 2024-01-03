@@ -62,7 +62,7 @@ namespace Utilities
             // just some on screen tracking information
             Console.WriteLine($"Beginning import: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
             var tracker = new Tracker();
-            tracker.Every(15.Minutes(), Methods.LogProgress);
+            tracker.Every(1.Minutes(), Methods.LogProgress);
             tracker.OnComplete(Methods.LogProgress);
             tracker.Start();
 
