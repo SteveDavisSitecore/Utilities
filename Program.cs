@@ -13,6 +13,7 @@ namespace Utilities
     {
         private static IOrderCloudClient _ocIntegrationClient;
         public static AppSettings _settings;
+        private const int PRODUCT_COUNT = 100;
 
         public static async Task Main(string[] args)
         {
@@ -36,13 +37,6 @@ namespace Utilities
                 }
             });
 
-            //Console.WriteLine("First step is to configure the buyer environment. Type Y to continue, N to skip");
-            //var setup_buyer = Console.ReadLine();
-            //if (setup_buyer.ToLower() == "y")
-            //{
-            //    await SetupBuyer();
-            //}
-
             Console.WriteLine("Next step is to import products embedded in assembly. Type Y to continue, N to skip");
             var import_products = Console.ReadLine();
             if (import_products.ToLower() == "y")
@@ -51,14 +45,11 @@ namespace Utilities
             }
         }
 
-        private static async Task SetupBuyer()
-        {
-            var buyer = new ShopperImportPipeline(_ocIntegrationClient, _settings);
-            await buyer.RunAsync();
-        }
-
         private static async Task ImportProducts()
         {
+            // get initial product count
+            var initialTotalCount = await Methods.RetrieveMetaTotalCount(_ocIntegrationClient);
+
             // just some on screen tracking information
             Console.WriteLine($"Beginning import: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
             var tracker = new Tracker();
@@ -66,29 +57,37 @@ namespace Utilities
             tracker.OnComplete(Methods.LogProgress);
             tracker.Start();
 
-            //begin parsing the file and calling the API
+            // begin calling the API
             var products = new ProductImportPipeline(_ocIntegrationClient, _settings);
-            var lastID = await products.RunAsync(_ocIntegrationClient, tracker);
+            var lastID = await products.RunAsync(_ocIntegrationClient, tracker, PRODUCT_COUNT);
 
             tracker.Stop();
             tracker.Now(Methods.LogProgress);
             await tracker.CompleteAsync();
             Console.WriteLine($"API Import complete: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
 
-            await PollForLastProduct(lastID);
+            await PollForLastProduct(lastID, initialTotalCount);
+
+            // final check that total metacount matches initial total + product count processed
+            var newCount = await Methods.RetrieveMetaTotalCount(_ocIntegrationClient);
+            if (newCount != initialTotalCount + PRODUCT_COUNT)
+            {
+                throw new Exception(
+                    $"Meta TotalCount: {newCount} does not equal initial count: {initialTotalCount} + product count: {PRODUCT_COUNT}");
+            }
         }
 
-        private static async Task PollForLastProduct(string productID)
+        private static async Task PollForLastProduct(string productID, int initialTotalCount)
         {
             var results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
 
             // poll every 1 second until last product ID shows up in product list (indexed in Elasticsearch)
             while (!results.Items.Any())
             {
-                results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
-
                 await Task.Delay(1000);
+                results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
             }
+
             Console.WriteLine($"Last Product ID indexed in Elasticsearch: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
         }
     }
