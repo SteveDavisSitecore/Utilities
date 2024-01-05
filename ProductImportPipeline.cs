@@ -27,7 +27,7 @@ namespace Utilities
             _settings = settings;
         }
 
-        public async Task<string> RunAsync(IOrderCloudClient oc, Tracker tracker, int productCount)
+        public async Task<string> RunAsync(IOrderCloudClient oc, Tracker tracker, int productCount, int pause, int max)
         {
             Console.WriteLine("Mapping Products");
 
@@ -40,7 +40,7 @@ namespace Utilities
             tracker.ItemsDiscovered(products.Count());
 
             Console.WriteLine($"Starting PUT products: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
-            await Throttler.RunAsync(products.Take(productCount - 1), 20, 1000, async p =>
+            await Throttler.RunAsync(products.Take(productCount - 1), pause, max, async p =>
             {
                 await Methods.PutProducts(oc, p, tracker);
             });

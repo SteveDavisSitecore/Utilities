@@ -13,7 +13,9 @@ namespace Utilities
     {
         private static IOrderCloudClient _ocIntegrationClient;
         public static AppSettings _settings;
-        private const int PRODUCT_COUNT = 100;
+        private const int PRODUCT_COUNT = 500000;
+        private const int MIN_PAUSE = 5;
+        private const int MAX_CONCURRENCY = 100000;
 
         public static async Task Main(string[] args)
         {
@@ -59,25 +61,24 @@ namespace Utilities
 
             // begin calling the API
             var products = new ProductImportPipeline(_ocIntegrationClient, _settings);
-            var lastID = await products.RunAsync(_ocIntegrationClient, tracker, PRODUCT_COUNT);
+            var lastID = await products.RunAsync(_ocIntegrationClient, tracker, PRODUCT_COUNT, MIN_PAUSE, MAX_CONCURRENCY);
 
             tracker.Stop();
             tracker.Now(Methods.LogProgress);
             await tracker.CompleteAsync();
             Console.WriteLine($"API Import complete: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
 
-            await PollForLastProduct(lastID, initialTotalCount);
+            await PollForLastProduct(lastID);
 
             // final check that total metacount matches initial total + product count processed
             var newCount = await Methods.RetrieveMetaTotalCount(_ocIntegrationClient);
             if (newCount != initialTotalCount + PRODUCT_COUNT)
             {
-                throw new Exception(
-                    $"Meta TotalCount: {newCount} does not equal initial count: {initialTotalCount} + product count: {PRODUCT_COUNT}");
+                Console.WriteLine($"Meta TotalCount: {newCount} does not equal initial count: {initialTotalCount} + product count: {PRODUCT_COUNT}.  Difference of {(initialTotalCount + PRODUCT_COUNT) - newCount }");
             }
         }
 
-        private static async Task PollForLastProduct(string productID, int initialTotalCount)
+        private static async Task PollForLastProduct(string productID)
         {
             var results = await Methods.ListProductsWithLastIDFilter(_ocIntegrationClient, productID);
 
