@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -87,11 +87,12 @@ namespace Utilities
         {
             Console.WriteLine("Mapping Suppliers");
 
-            var suppliers = new List<Supplier>();
+            var suppliers = new Dictionary<string, Supplier>();
 
             for (var i = 0; i < SUPPLIER_COUNT; i++)
             {
-                suppliers.Add(MapSupplier(i));
+                var id = string.Concat("Supplier_", (i + 1).ToString("D3"));
+                suppliers.Add(id, MapSupplier(id));
             }
 
             tracker.ItemsDiscovered(suppliers.Count());
@@ -99,7 +100,13 @@ namespace Utilities
             Console.WriteLine("PUT Suppliers");
             await Throttler.RunAsync(suppliers, MIN_PAUSE, MAX_CONCURRENT, async s =>
             {
-                await Methods.PutSuppliers(oc, s, tracker);
+                await Methods.PutSuppliers(oc, s.Value, tracker);
+            });
+            Console.WriteLine("PUT Supplier Addresses");
+            await Throttler.RunAsync(suppliers, MIN_PAUSE, MAX_CONCURRENT, async s =>
+            {
+                var address = MapSupplierAddress(s.Key);
+                await Methods.PutSupplierAddresses(oc, s.Key, address, tracker);
             });
             Console.WriteLine("PUT Suppliers Complete");
         }
@@ -136,6 +143,11 @@ namespace Utilities
             product.ID = (string)productID;
             product.AllSuppliersCanSell = true; // requirement for PSP setup
             product.DefaultPriceScheduleID = productID + "_PriceSchedule";
+            product.Inventory = new OrderCloud.SDK.Inventory
+            {
+                Enabled = true,
+                OrderCanExceed = true
+            };
             product.Active = true;
             product.Description = (string)string.Concat("Description_", productID);
             product.Name = (string)string.Concat("Name_", productID);
@@ -147,16 +159,28 @@ namespace Utilities
             return product;
         }
 
-        public static Supplier MapSupplier(int index)
+        public static Supplier MapSupplier(string id)
         {
-            var id = string.Concat("Supplier_", (index + 1).ToString("D3"));
-
             return new Supplier()
             {
                 ID = id,
                 Name = id,
                 AllBuyersCanOrder = true, // requirement for PSP setup
                 Active = true
+            };
+        }
+
+        public static OrderCloud.SDK.Address MapSupplierAddress(string supplierID)
+        {
+            return new OrderCloud.SDK.Address()
+            {
+                ID = supplierID,
+                AddressName = string.Concat("Name_", supplierID),
+                Street1 = "Fake Street",
+                City = "Fake City",
+                State = "MN",
+                Country = "US",
+                Zip = "11111"
             };
         }
 

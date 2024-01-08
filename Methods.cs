@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -77,6 +77,23 @@ namespace Utilities
             try
             {
                 await oc.Suppliers.SaveAsync(supplier.ID, supplier);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                tracker.ItemFailed();
+            }
+            finally
+            {
+                tracker.ItemSucceeded();
+            }
+        }
+
+        internal static async Task PutSupplierAddresses(IOrderCloudClient oc, string supplierID, Address address, Tracker tracker)
+        {
+            try
+            {
+                await oc.SupplierAddresses.SaveAsync(supplierID, address.ID, address);
             }
             catch (Exception ex)
             {
