@@ -18,11 +18,31 @@ namespace Utilities
             Console.WriteLine($"{progress.ElapsedTime:hh\\:mm\\:ss} elapsed. {progress.ItemsDone} of {progress.TotalItems} complete ({progress.PercentDone}%)");
         }
 
-        internal static async Task PutProducts(IOrderCloudClient oc, Product product, Tracker tracker)
+        internal static async Task PutProducts(IOrderCloudClient oc, Product product, string catalogId, string categoryId, Tracker tracker)
         {
             try
             {
+                await oc.PriceSchedules.SaveAsync(product.ID, new PriceSchedule()
+                {
+                    ID = product.ID,
+                    Name = string.Concat("Name_", product.ID),
+                    PriceBreaks = new[]
+                        { new PriceBreak { Price = Convert.ToDecimal(new Random().Next(10, 100)), Quantity = 1 } },
+                    MinQuantity = 1,
+                    ApplyShipping = false,
+                    ApplyTax = false
+                });
                 await oc.Products.SaveAsync(product.ID, product);
+                await oc.Catalogs.SaveProductAssignmentAsync(new ProductCatalogAssignment()
+                {
+                    CatalogID = catalogId,
+                    ProductID = product.ID
+                });
+                await oc.Categories.SaveProductAssignmentAsync(catalogId, new CategoryProductAssignment()
+                {
+                    CategoryID = categoryId,
+                    ProductID = product.ID
+                });
             }
             catch (Exception ex)
             {
@@ -34,7 +54,6 @@ namespace Utilities
                 tracker.ItemSucceeded();
             }
         }
-
 
         internal static async Task<ListPageWithFacets<Product>> ListProductsWithLastIDFilter(IOrderCloudClient oc, string productID)
         {

@@ -8,6 +8,7 @@ namespace Utilities
     {
         public bool Live { get; set; }
         public string CatalogID { get; set; }
+        public string CategoryID {get; set; }
         public string IntegrationClientId { get; set; }
         public string IntegrationClientSecret { get; set; }
         public string ApiUrl { get; set; }

@@ -42,12 +42,13 @@ namespace Utilities
             Console.WriteLine($"Starting PUT products: {DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}");
             await Throttler.RunAsync(products.Take(productCount - 1), pause, max, async p =>
             {
-                await Methods.PutProducts(oc, p, tracker);
+                await Methods.PutProducts(oc, p, _settings.CatalogID, _settings.CategoryID, tracker);
             });
 
             // ensure last product in list is last ID processed
             var lastProduct = products.Last();
-            await Methods.PutProducts(oc, lastProduct, tracker);
+            await Methods.PutProducts(oc, lastProduct, _settings.CatalogID, _settings.CategoryID, tracker);
+
             Console.WriteLine($"Last Product ID: {lastProduct.ID}");
 
             return lastProduct.ID;
@@ -63,6 +64,7 @@ namespace Utilities
             product.Active = true;
             product.Description = (string)string.Concat("Description_", productID);
             product.Name = (string)string.Concat("Name_", productID);
+            product.DefaultPriceScheduleID = productID;
 
             return product;
         }
