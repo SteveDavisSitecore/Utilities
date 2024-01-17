@@ -27,6 +27,15 @@ namespace Utilities
             });
             Console.WriteLine($"Catalog {catalog.Name} PUT");
 
+            var category = await _ocAdmin.Categories.SaveAsync(_settings.CatalogID.ToSafeID(), _settings.CategoryID.ToSafeID(), new Category()
+            {
+                Active = true,
+                Description = _settings.CategoryID.ToSafeID(),
+                ID = _settings.CategoryID.ToSafeID(),
+                Name = _settings.CategoryID.ToSafeID()
+            });
+            Console.WriteLine($"Category {category.Name} PUT");
+
             var buyer = await _ocAdmin.Buyers.SaveAsync(_settings.BuyerID.ToSafeID(), new Buyer()
             {
                 ID = _settings.BuyerID.ToSafeID(),

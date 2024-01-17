@@ -39,12 +39,25 @@ namespace Utilities
                 }
             });
 
+            //Console.WriteLine("First step is to configure the buyer environment. Type Y to continue, N to skip");
+            //var setup_buyer = Console.ReadLine();
+            //if (setup_buyer.ToLower() == "y")
+            //{
+            //    await SetupBuyer();
+            //}
+
             Console.WriteLine("Next step is to import products embedded in assembly. Type Y to continue, N to skip");
             var import_products = Console.ReadLine();
             if (import_products.ToLower() == "y")
             {
                 await ImportProducts();
             }
+        }
+
+        private static async Task SetupBuyer()
+        {
+            var buyer = new ShopperImportPipeline(_ocIntegrationClient, _settings);
+            await buyer.RunAsync();
         }
 
         private static async Task ImportProducts()
